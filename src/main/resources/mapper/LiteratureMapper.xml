@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.literature.assistant.mapper.LiteratureMapper">
+
+    <resultMap id="BaseResultMap" type="com.literature.assistant.entity.Literature">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="file_path" property="filePath"/>
+        <result column="original_file_name" property="originalFileName"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="file_type" property="fileType"/>
+        <result column="tags" property="tags"/>
+        <result column="description" property="description"/>
+        <result column="reading_guide" property="readingGuide"/>
+        <result column="category" property="category"/>
+        <result column="author" property="author"/>
+        <result column="publish_year" property="publishYear"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, title, file_path, original_file_name, file_size, file_type, tags, 
+        description, reading_guide, category, author, publish_year, create_time, 
+        update_time, deleted
+    </sql>
+
+    <select id="selectLiteraturePage" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM literature
+        WHERE deleted = 0
+        <if test="category != null and category != ''">
+            AND category LIKE CONCAT('%', #{category}, '%')
+        </if>
+        <if test="description != null and description != ''">
+            AND description LIKE CONCAT('%', #{description}, '%')
+        </if>
+        <if test="readingGuide != null and readingGuide != ''">
+            AND reading_guide LIKE CONCAT('%', #{readingGuide}, '%')
+        </if>
+        <if test="tags != null and tags != ''">
+            AND tags LIKE CONCAT('%', #{tags}, '%')
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,165 @@
+// 全局样式变量
+:root {
+  --primary-color: #1A365D;
+  --primary-light: #2A4D7A;
+  --primary-dark: #0F2540;
+  --secondary-color: #4299E1;
+  --success-color: #48BB78;
+  --warning-color: #ED8936;
+  --error-color: #F56565;
+  --text-primary: #2D3748;
+  --text-secondary: #718096;
+  --text-muted: #A0AEC0;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7FAFC;
+  --bg-muted: #EDF2F7;
+  --border-color: #E2E8F0;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+// 暗色主题变量
+[data-theme="dark"] {
+  --primary-color: #2A4D7A;
+  --primary-light: #3A6DA5;
+  --primary-dark: #1A365D;
+  --bg-primary: #1A202C;
+  --bg-secondary: #2D3748;
+  --bg-muted: #4A5568;
+  --text-primary: #E2E8F0;
+  --text-secondary: #CBD5E0;
+  --text-muted: #718096;
+  --border-color: #4A5568;
+}
+
+// 全局样式重置
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  line-height: 1.6;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// 通用工具类
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+}
+
+.card {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  
+  &-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+  }
+}
+
+// 按钮样式增强
+.el-button--primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  
+  &:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+  }
+}
+
+// 表格样式增强
+.el-table {
+  .el-table__header th {
+    background-color: var(--bg-muted);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  
+  .el-table__row:hover {
+    background-color: var(--bg-muted);
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  .page-header {
+    padding: 1.5rem 0;
+    
+    h1 {
+      font-size: 2rem;
+    }
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+}
+
+// 动画效果
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}

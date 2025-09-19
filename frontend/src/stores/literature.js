@@ -1,0 +1,179 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { literatureApi } from '@/api/literature'
+
+export const useLiteratureStore = defineStore('literature', () => {
+  // 状态
+  const literatureList = ref([])
+  const totalCount = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  const loading = ref(false)
+  const error = ref(null)
+  
+  // 筛选条件
+  const filters = ref({
+    category: '',
+    description: '',
+    readingGuide: '',
+    tags: ''
+  })
+
+  // 获取文献列表
+  const fetchLiteratureList = async (page = 1, size = 10) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await literatureApi.getLiteratureList(
+        page,
+        size,
+        filters.value.category,
+        filters.value.description,
+        filters.value.readingGuide,
+        filters.value.tags
+      )
+      
+      literatureList.value = response.data.records || []
+      totalCount.value = response.data.total
+      currentPage.value = page
+      pageSize.value = size
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取文献列表失败'
+      console.error('获取文献列表失败:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 更新筛选条件
+  const updateFilters = (newFilters) => {
+    filters.value = { ...filters.value, ...newFilters }
+    fetchLiteratureList(1, pageSize.value)
+  }
+
+  // 重置筛选条件
+  const resetFilters = () => {
+    filters.value = {
+      category: '',
+      description: '',
+      readingGuide: '',
+      tags: ''
+    }
+    fetchLiteratureList(1, pageSize.value)
+  }
+
+  // 上传文献
+  const uploadLiterature = async (file, apiKey) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('apiKey', apiKey)
+      
+      const response = await literatureApi.uploadLiterature(formData)
+      await fetchLiteratureList(currentPage.value, pageSize.value)
+      return response.data
+    } catch (err) {
+      error.value = err.response?.data?.message || '文献上传失败'
+      console.error('文献上传失败:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 批量导入
+  const batchImportLiterature = async (files, apiKey, onProgress) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const formData = new FormData()
+      files.forEach(file => formData.append('files', file))
+      formData.append('apiKey', apiKey)
+      
+      const response = await literatureApi.batchImportLiterature(formData, onProgress)
+      await fetchLiteratureList(currentPage.value, pageSize.value)
+      return response.data
+    } catch (err) {
+      error.value = err.response?.data?.message || '批量导入失败'
+      console.error('批量导入失败:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 下载文献
+  const downloadLiterature = async (id) => {
+    try {
+      const response = await literatureApi.downloadLiterature(id)
+      
+      // 创建下载链接
+      const blob = new Blob([response.data])
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      // 从响应头获取文件名
+      const contentDisposition = response.headers['content-disposition']
+      let fileName = 'document'
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/)
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = fileNameMatch[1]
+        }
+      }
+      
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      error.value = err.response?.data?.message || '下载文献失败'
+      console.error('下载文献失败:', err)
+      throw err
+    }
+  }
+
+  // 获取文献详情
+  const getLiteratureDetail = async (id) => {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await literatureApi.getLiteratureDetail(id)
+      return response.data
+    } catch (err) {
+      error.value = err.response?.data?.message || '获取文献详情失败'
+      console.error('获取文献详情失败:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    // 状态
+    literatureList,
+    totalCount,
+    currentPage,
+    pageSize,
+    loading,
+    error,
+    filters,
+    
+    // 方法
+    fetchLiteratureList,
+    updateFilters,
+    resetFilters,
+    uploadLiterature,
+    batchImportLiterature,
+    downloadLiterature,
+    getLiteratureDetail
+  }
+})
