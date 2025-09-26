@@ -83,6 +83,11 @@ export const literatureApi = {
   // 获取文献详情
   getLiteratureDetail: (id) => {
     return api.get(`/literature/${id}`)
+  },
+
+  // 删除文献
+  deleteLiterature: (id) => {
+    return api.delete(`/literature/${id}`)
   }
 }
 

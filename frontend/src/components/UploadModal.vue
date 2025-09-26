@@ -133,25 +133,19 @@ const beforeUpload = (file) => {
   </el-dialog>
 </template>
 
-<style scoped>
-.el-upload__tip {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 8px;
-}
-
+<style lang="scss" scoped>
 .form-tip {
   font-size: 12px;
-  color: var(--text-muted);
+  color: $text-secondary;
   margin-top: 4px;
-}
 
-.form-tip a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
+  a {
+    color: $primary-color;
+    text-decoration: none;
 
-.form-tip a:hover {
-  text-decoration: underline;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 </style>

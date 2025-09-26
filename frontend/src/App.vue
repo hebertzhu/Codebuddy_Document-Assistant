@@ -1,16 +1,11 @@
-<script setup>
-import { RouterView } from 'vue-router'
-</script>
-
 <template>
-  <div id="app">
-    <RouterView />
-  </div>
+  <MainLayout />
 </template>
 
-<style scoped>
-#app {
-  min-height: 100vh;
-  background-color: #f5f7fa;
-}
+<script setup>
+import MainLayout from '@/layouts/MainLayout.vue';
+</script>
+
+<style lang="scss">
+@use "@/styles/index.scss";
 </style>

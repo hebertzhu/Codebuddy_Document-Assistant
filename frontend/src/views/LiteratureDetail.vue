@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLiteratureStore } from '@/stores/literature'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
+import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const literatureStore = useLiteratureStore()
@@ -69,192 +70,145 @@ onMounted(() => {
 <template>
   <div class="literature-detail">
     <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="container">
-        <h1>文献详情</h1>
-        <p class="subtitle">{{ literature?.title }}</p>
-      </div>
-    </div>
+    <PageHeader :title="literature?.title || '文献详情'" />
 
     <div class="container" v-loading="loading">
-      <div v-if="literature" class="detail-content">
-        <!-- 基本信息卡片 -->
-        <div class="info-card card">
-          <div class="info-header">
-            <h3>基本信息</h3>
-            <el-button type="primary" @click="handleDownload">
+      <div v-if="literature" class="detail-layout">
+        <!-- 左侧内容 -->
+        <div class="main-content">
+          <!-- 文献描述 -->
+          <el-card v-if="literature.description" class="description-card">
+            <template #header>
+              <h3>文献描述</h3>
+            </template>
+            <div class="description-content">
+              {{ literature.description }}
+            </div>
+          </el-card>
+
+          <!-- 阅读指南 -->
+          <el-card v-if="literature.readingGuide" class="guide-card">
+            <template #header>
+              <h3>阅读指南</h3>
+            </template>
+            <div class="guide-content" v-html="renderMarkdown(literature.readingGuide)"></div>
+          </el-card>
+        </div>
+
+        <!-- 右侧信息栏 -->
+        <div class="sidebar">
+          <el-card class="info-card">
+            <template #header>
+              <h3>基本信息</h3>
+            </template>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">文件名:</span>
+                <span class="value">{{ literature.originalFileName }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">文件类型:</span>
+                <span class="value">{{ literature.fileType }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">文件大小:</span>
+                <span class="value">{{ formatFileSize(literature.fileSize) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">分类:</span>
+                <span class="value">{{ literature.category || '未分类' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">作者:</span>
+                <span class="value">{{ literature.author || '未知' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">出版年份:</span>
+                <span class="value">{{ literature.publishYear || '未知' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">标签:</span>
+                <span class="value">
+                  <el-tag
+                    v-for="tag in literature.tags?.split(',')"
+                    :key="tag"
+                    size="small"
+                    style="margin-right: 4px;"
+                  >
+                    {{ tag.trim() }}
+                  </el-tag>
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="label">上传时间:</span>
+                <span class="value">{{ formatTime(literature.createTime) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">更新时间:</span>
+                <span class="value">{{ formatTime(literature.updateTime) }}</span>
+              </div>
+            </div>
+            <el-button type="primary" @click="handleDownload" class="download-btn">
               <el-icon><Download /></el-icon>下载原文
             </el-button>
-          </div>
-          
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">标题：</span>
-              <span class="value">{{ literature.title }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">文件名：</span>
-              <span class="value">{{ literature.originalFileName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">文件类型：</span>
-              <span class="value">{{ literature.fileType }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">文件大小：</span>
-              <span class="value">{{ formatFileSize(literature.fileSize) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">分类：</span>
-              <span class="value">{{ literature.category || '未分类' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">作者：</span>
-              <span class="value">{{ literature.author || '未知' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">出版年份：</span>
-              <span class="value">{{ literature.publishYear || '未知' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">标签：</span>
-              <span class="value">
-                <el-tag
-                  v-for="tag in literature.tags?.split(',')"
-                  :key="tag"
-                  size="small"
-                  style="margin-right: 4px;"
-                >
-                  {{ tag.trim() }}
-                </el-tag>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="label">上传时间：</span>
-              <span class="value">{{ formatTime(literature.createTime) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">更新时间：</span>
-              <span class="value">{{ formatTime(literature.updateTime) }}</span>
-            </div>
-          </div>
+          </el-card>
         </div>
-
-        <!-- 文献描述 -->
-        <div v-if="literature.description" class="description-card card">
-          <h3>文献描述</h3>
-          <div class="description-content">
-            {{ literature.description }}
-          </div>
-        </div>
-
-        <!-- 阅读指南 -->
-        <div v-if="literature.readingGuide" class="guide-card card">
-          <h3>AI阅读指南</h3>
-          <div class="guide-content" v-html="renderMarkdown(literature.readingGuide)"></div>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-else class="empty-card card">
-          <el-empty description="暂无阅读指南" />
-        </div>
-      </div>
-
-      <!-- 加载失败 -->
-      <div v-else-if="!loading" class="error-card card">
-        <el-empty description="文献不存在或加载失败" />
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+
 .literature-detail {
   min-height: 100vh;
-  background-color: var(--bg-secondary);
-}
+  background-color: $bg-secondary;
 
-.detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.info-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-}
-
-.label {
-  font-weight: 600;
-  color: var(--text-primary);
-  min-width: 80px;
-}
-
-.value {
-  color: var(--text-secondary);
-  word-break: break-all;
-}
-
-.description-content,
-.guide-content {
-  line-height: 1.8;
-  color: var(--text-secondary);
-}
-
-.guide-content {
-  :deep(h1) {
-    font-size: 1.8rem;
-    color: var(--primary-color);
-    margin: 1.5rem 0 1rem;
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
   }
 
-  :deep(h2) {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-    margin: 1.2rem 0 0.8rem;
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 20px;
   }
 
-  :deep(h3) {
-    font-size: 1.2rem;
-    color: var(--primary-color);
-    margin: 1rem 0 0.6rem;
+  .main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
-  :deep(p) {
-    margin: 0.5rem 0;
+  .description-card, .guide-card, .info-card {
+    .description-content, .guide-content {
+      line-height: 1.6;
+    }
   }
 
-  :deep(ul), :deep(ol) {
-    margin: 0.5rem 0;
-    padding-left: 1.5rem;
+  .info-grid {
+    .info-item {
+      display: flex;
+      margin-bottom: 12px;
+
+      .label {
+        width: 80px;
+        color: $text-secondary;
+        flex-shrink: 0;
+      }
+
+      .value {
+        color: $text-primary;
+        word-break: break-all;
+      }
+    }
   }
 
-  :deep(li) {
-    margin: 0.25rem 0;
+  .download-btn {
+    width: 100%;
+    margin-top: 20px;
   }
-
-  :deep(strong) {
-    color: var(--primary-color);
-  }
-}
-
-.empty-card,
-.error-card {
-  text-align: center;
-  padding: 40px;
 }
 </style>

@@ -214,58 +214,45 @@ const getStatusText = () => {
   </el-dialog>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .batch-import-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.upload-section,
-.api-key-section {
-  margin-bottom: 16px;
-}
-
-.el-upload__tip {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 8px;
+  gap: 24px;
 }
 
 .form-tip {
   font-size: 12px;
-  color: var(--text-muted);
+  color: $text-secondary;
   margin-top: 4px;
-}
 
-.form-tip a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
+  a {
+    color: $primary-color;
+    text-decoration: none;
 
-.form-tip a:hover {
-  text-decoration: underline;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }
 
 .progress-section {
-  margin-top: 16px;
-}
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
 
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
+    .status-text {
+      font-size: 14px;
+      color: $text-primary;
+    }
 
-.status-text {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.progress-percent {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary-color);
+    .progress-percent {
+      font-size: 14px;
+      font-weight: 600;
+      color: $primary-color;
+    }
+  }
 }
 </style>

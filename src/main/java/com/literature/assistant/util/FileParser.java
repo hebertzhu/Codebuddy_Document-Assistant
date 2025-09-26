@@ -1,6 +1,7 @@
 package com.literature.assistant.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -41,7 +42,7 @@ public class FileParser {
      * 解析PDF文件
      */
     private String parsePdfFile(String filePath) throws IOException {
-        try (PDDocument document = PDDocument.load(new File(filePath))) {
+        try (PDDocument document = Loader.loadPDF(new File(filePath))) {
             PDFTextStripper stripper = new PDFTextStripper();
             return stripper.getText(document);
         }

@@ -46,11 +46,25 @@ export const useLiteratureStore = defineStore('literature', () => {
     }
   }
 
-  // 更新筛选条件
-  const updateFilters = (newFilters) => {
-    filters.value = { ...filters.value, ...newFilters }
-    fetchLiteratureList(1, pageSize.value)
-  }
+  // 设置搜索参数
+  const setSearchParams = (params) => {
+    filters.value = { ...filters.value, ...params };
+  };
+
+  // 删除文献
+  const deleteLiterature = async (id) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      await literatureApi.deleteLiterature(id);
+      await fetchLiteratureList(currentPage.value, pageSize.value);
+    } catch (err) {
+      error.value = err.response?.data?.message || '删除文献失败';
+      console.error('删除文献失败:', err);
+    } finally {
+      loading.value = false;
+    }
+  };
 
   // 重置筛选条件
   const resetFilters = () => {
@@ -169,7 +183,6 @@ export const useLiteratureStore = defineStore('literature', () => {
     
     // 方法
     fetchLiteratureList,
-    updateFilters,
     resetFilters,
     uploadLiterature,
     batchImportLiterature,

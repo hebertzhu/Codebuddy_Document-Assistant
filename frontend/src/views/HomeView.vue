@@ -1,110 +1,98 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useLiteratureStore } from '@/stores/literature'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import UploadModal from '@/components/UploadModal.vue'
-import BatchImportModal from '@/components/BatchImportModal.vue'
+import { ref, reactive, onMounted } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Plus, Upload } from '@element-plus/icons-vue';
+import { useLiteratureStore } from '@/stores/literature';
 
-const literatureStore = useLiteratureStore()
+import LiteratureCard from '@/components/LiteratureCard.vue';
+import UploadModal from '@/components/UploadModal.vue';
+import BatchImportModal from '@/components/BatchImportModal.vue';
 
-// 搜索条件
-const searchForm = ref({
+const literatureStore = useLiteratureStore();
+
+// 搜索表单
+const searchForm = reactive({
   category: '',
   description: '',
   readingGuide: '',
-  tags: ''
-})
+  tags: '',
+});
 
-// 模态框控制
-const uploadModalVisible = ref(false)
-const batchImportModalVisible = ref(false)
+// 模态框可见性
+const uploadModalVisible = ref(false);
+const batchImportModalVisible = ref(false);
 
-// 初始化加载数据
+// 组件挂载后加载文献列表
 onMounted(() => {
-  literatureStore.fetchLiteratureList()
-})
-
-// 处理分页变化
-const handleCurrentChange = (page) => {
-  literatureStore.fetchLiteratureList(page, literatureStore.pageSize)
-}
+  literatureStore.fetchLiteratureList();
+});
 
 // 处理搜索
 const handleSearch = () => {
-  literatureStore.updateFilters(searchForm.value)
-}
+  literatureStore.setSearchParams(searchForm);
+  literatureStore.fetchLiteratureList(1); // 搜索后回到第一页
+};
 
-// 重置搜索
+// 处理重置
 const handleReset = () => {
-  searchForm.value = {
-    category: '',
-    description: '',
-    readingGuide: '',
-    tags: ''
-  }
-  literatureStore.resetFilters()
-}
+  searchForm.category = '';
+  searchForm.description = '';
+  searchForm.readingGuide = '';
+  searchForm.tags = '';
+  literatureStore.setSearchParams({});
+  literatureStore.fetchLiteratureList(1);
+};
+
+// 处理分页
+const handleCurrentChange = (page) => {
+  literatureStore.fetchLiteratureList(page);
+};
 
 // 处理上传成功
 const handleUploadSuccess = () => {
-  uploadModalVisible.value = false
-  ElMessage.success('文献上传成功')
-  literatureStore.fetchLiteratureList()
-}
+  uploadModalVisible.value = false;
+  ElMessage.success('文献上传成功');
+  literatureStore.fetchLiteratureList(); // 刷新列表
+};
 
 // 处理批量导入成功
 const handleBatchImportSuccess = () => {
-  batchImportModalVisible.value = false
-  ElMessage.success('批量导入完成')
-  literatureStore.fetchLiteratureList()
-}
+  batchImportModalVisible.value = false;
+  ElMessage.success('批量导入任务已创建');
+  literatureStore.fetchLiteratureList(); // 刷新列表
+};
 
-// 下载文献
-const handleDownload = async (id, fileName) => {
-  try {
-    await literatureStore.downloadLiterature(id)
-    ElMessage.success('下载成功')
-  } catch (error) {
-    ElMessage.error('下载失败')
-  }
-}
+// 处理下载
+const handleDownload = (literature) => {
+  // 实现下载逻辑
+  console.log('下载文献:', literature);
+};
 
-// 查看详情
-const handleViewDetail = (id) => {
-  window.open(`/literature/${id}`, '_blank')
-}
+// 处理查看详情
+const handleViewDetail = (literature) => {
+  // 实现查看详情逻辑
+  console.log('查看详情:', literature);
+};
 
-// 删除文献
-const handleDelete = async (id, title) => {
-  try {
-    await ElMessageBox.confirm(`确定要删除文献"${title}"吗？`, '确认删除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+// 处理删除
+const handleDelete = (literature) => {
+  ElMessageBox.confirm(`确定删除文献 "${literature.title}" 吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      literatureStore.deleteLiterature(literature.id);
     })
-    // 这里需要实现删除API调用
-    ElMessage.success('删除成功')
-    literatureStore.fetchLiteratureList()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
+    .catch(() => {
+      // 取消删除
+    });
+};
 </script>
 
 <template>
   <div class="home-view">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="container">
-        <h1>文献库</h1>
-        <p class="subtitle">智能管理您的学术文献资源</p>
-      </div>
-    </div>
-
     <div class="container">
-      <!-- 操作工具栏 -->
       <div class="action-bar">
         <el-button type="primary" @click="uploadModalVisible = true">
           <el-icon><Plus /></el-icon>导入文献
@@ -114,7 +102,6 @@ const handleDelete = async (id, title) => {
         </el-button>
       </div>
 
-      <!-- 搜索筛选区域 -->
       <div class="search-card card">
         <div class="search-header">
           <h3>文献筛选</h3>
@@ -149,40 +136,30 @@ const handleDelete = async (id, title) => {
         </el-form>
       </div>
 
-      <!-- 文献列表 -->
-      <div class="literature-list card">
+      <div class="literature-list">
         <div class="list-header">
           <h3>文献列表</h3>
           <span class="total-count">共 {{ literatureStore.totalCount }} 篇文献</span>
         </div>
 
-        <el-table
-          :data="literatureStore.literatureList"
-          v-loading="literatureStore.loading"
-          style="width: 100%"
-        >
-          <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-          <el-table-column prop="category" label="分类" width="120" />
-          <el-table-column prop="author" label="作者" width="120" />
-          <el-table-column prop="publishYear" label="年份" width="80" />
-          <el-table-column prop="fileSizeReadable" label="大小" width="80" />
-          <el-table-column prop="createTime" label="上传时间" width="150" />
-          <el-table-column label="操作" width="200" fixed="right">
-            <template #default="{ row }">
-              <el-button size="small" @click="handleDownload(row.id, row.originalFileName)">
-                下载
-              </el-button>
-              <el-button size="small" type="primary" @click="handleViewDetail(row.id)">
-                查看
-              </el-button>
-              <el-button size="small" type="danger" @click="handleDelete(row.id, row.title)">
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div v-if="literatureStore.loading" v-loading="literatureStore.loading" class="loading-spinner">
+        </div>
 
-        <!-- 分页 -->
+        <div v-else-if="literatureStore.literatureList.length > 0" class="card-grid">
+          <LiteratureCard
+            v-for="item in literatureStore.literatureList"
+            :key="item.id"
+            :literature="item"
+            @download="handleDownload"
+            @view="handleViewDetail"
+            @delete="handleDelete"
+          />
+        </div>
+
+        <div v-else class="empty-state">
+          <p>暂无文献</p>
+        </div>
+
         <div class="pagination">
           <el-pagination
             v-model:current-page="literatureStore.currentPage"
@@ -197,13 +174,11 @@ const handleDelete = async (id, title) => {
       </div>
     </div>
 
-    <!-- 上传模态框 -->
     <UploadModal
       v-model:visible="uploadModalVisible"
       @success="handleUploadSuccess"
     />
 
-    <!-- 批量导入模态框 -->
     <BatchImportModal
       v-model:visible="batchImportModalVisible"
       @success="handleBatchImportSuccess"
@@ -211,50 +186,84 @@ const handleDelete = async (id, title) => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .home-view {
-  min-height: 100vh;
-  background-color: var(--bg-secondary);
+  padding: 24px;
+  background-color: $bg-primary;
+  color: $text-primary;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .action-bar {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   display: flex;
   gap: 12px;
 }
 
+.card {
+  background-color: $bg-secondary;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .search-card {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+
+  .search-header {
+    margin-bottom: 20px;
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-primary;
+    }
+  }
 }
 
-.search-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
+.literature-list {
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 
-.list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-primary;
+    }
 
-.total-count {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
+    .total-count {
+      font-size: 14px;
+      color: $text-secondary;
+    }
+  }
 
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
+  .loading-spinner {
+    text-align: center;
+    padding: 40px;
+  }
 
-:deep(.el-table .cell) {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: $text-secondary;
+  }
+
+  .pagination {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 </style>
