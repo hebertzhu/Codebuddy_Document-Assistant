@@ -59,16 +59,10 @@ export const literatureApi = {
   },
 
   // 批量导入
-  batchImportLiterature: (formData, onProgress) => {
-    return api.post('/literature/batch-import', formData, {
+  startBatchImport: (formData) => {
+    return api.post('/literature/batch-import/start', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress(percent)
-        }
       }
     })
   },

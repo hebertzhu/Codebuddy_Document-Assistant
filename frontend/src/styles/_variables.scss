@@ -1,18 +1,20 @@
 // Color Palette
-$primary-color: #409EFF;
+// Updated to orange theme
+$primary-color: #FF7A00;
 $secondary-color: #67C23A;
 $accent-color: #E6A23C;
 $danger-color: #F56C6C;
 $info-color: #909399;
 
 // Background Colors
-$bg-primary: #ffffff;
-$bg-secondary: #f2f3f5;
+// Light gray page background, white cards
+$bg-primary: #F5F5F5;
+$bg-secondary: #ffffff;
 
 // Text Colors
-$text-primary: #303133;
+$text-primary: #333333;
 $text-secondary: #606266;
 $text-placeholder: #C0C4CC;
 
 // Typography
-$font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '\5FAE\8F6F\96C5\9ED1', Arial, sans-serif;
+$font-family: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '\5FAE\8F6F\96C5\9ED1', 'Helvetica Neue', Helvetica, Arial, sans-serif;

@@ -1,8 +1,6 @@
 <template>
   <div class="main-layout">
-    <header class="header">
-      <PageHeader title="文档助手" subtitle="一个智能的文献管理工具" />
-    </header>
+    <TopNav />
     <div class="container">
       <aside class="sidebar">
         <Sidebar />
@@ -15,8 +13,8 @@
 </template>
 
 <script setup>
-import PageHeader from '@/components/PageHeader.vue';
 import Sidebar from '@/components/Sidebar.vue';
+import TopNav from '@/components/TopNav.vue';
 </script>
 
 <style lang="scss" scoped>
@@ -25,14 +23,11 @@ import Sidebar from '@/components/Sidebar.vue';
   flex-direction: column;
   height: 100vh;
 
-  .header {
-    flex-shrink: 0;
-  }
-
   .container {
     display: flex;
     flex-grow: 1;
     overflow: hidden;
+    padding-top: 56px; // account for fixed top nav
   }
 
   .sidebar {

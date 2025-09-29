@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { literatureApi } from '@/api/literature'
+import { useBatchImportProgress } from '@/utils/sse'
 
 export const useLiteratureStore = defineStore('literature', () => {
   // 状态
@@ -78,14 +79,13 @@ export const useLiteratureStore = defineStore('literature', () => {
   }
 
   // 上传文献
-  const uploadLiterature = async (file, apiKey) => {
+  const uploadLiterature = async (file) => {
     loading.value = true
     error.value = null
     
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('apiKey', apiKey)
       
       const response = await literatureApi.uploadLiterature(formData)
       await fetchLiteratureList(currentPage.value, pageSize.value)
@@ -100,18 +100,59 @@ export const useLiteratureStore = defineStore('literature', () => {
   }
 
   // 批量导入
-  const batchImportLiterature = async (files, apiKey, onProgress) => {
+  const batchImportLiterature = async (files, onProgress) => {
     loading.value = true
     error.value = null
     
     try {
       const formData = new FormData()
       files.forEach(file => formData.append('files', file))
-      formData.append('apiKey', apiKey)
+      // 创建批量导入任务，获得任务ID
+      const { importId } = await literatureApi.startBatchImport(formData)
+
+      // 连接SSE获取进度
+      const {
+        connectBatchImport,
+        onProgressUpdate,
+        onFileComplete,
+        onFileError,
+        onComplete,
+        onError
+      } = useBatchImportProgress()
+
+      if (onProgress) {
+        onProgressUpdate((payload) => {
+          const current = payload?.current || 0
+          const total = payload?.total || files.length
+          const percent = total > 0 ? Math.round((current * 100) / total) : 0
+          onProgress(percent)
+        })
+      }
+
+      onFileComplete(() => {
+        // 可扩展：收集完成的文件信息
+      })
+
+      onFileError((payload) => {
+        console.error('批量导入文件错误:', payload)
+      })
+
+      await new Promise((resolve, reject) => {
+        onComplete(async () => {
+          try {
+            await fetchLiteratureList(currentPage.value, pageSize.value)
+            resolve()
+          } catch (e) {
+            reject(e)
+          }
+        })
+        onError((err) => {
+          reject(err)
+        })
+        connectBatchImport(importId)
+      })
       
-      const response = await literatureApi.batchImportLiterature(formData, onProgress)
-      await fetchLiteratureList(currentPage.value, pageSize.value)
-      return response.data
+      return { importId }
     } catch (err) {
       error.value = err.response?.data?.message || '批量导入失败'
       console.error('批量导入失败:', err)

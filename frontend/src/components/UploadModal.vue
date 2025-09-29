@@ -33,14 +33,13 @@ const handleUpload = async () => {
   }
 
   if (!form.apiKey.trim()) {
-    ElMessage.warning('请输入API密钥')
-    return
+    // 不再需要从UI输入API密钥
   }
 
   loading.value = true
 
   try {
-    await literatureStore.uploadLiterature(form.file, form.apiKey)
+    await literatureStore.uploadLiterature(form.file)
     ElMessage.success('文献上传成功')
     emit('success')
     handleClose()
@@ -105,18 +104,7 @@ const beforeUpload = (file) => {
           </template>
         </el-upload>
       </el-form-item>
-
-      <el-form-item label="API密钥" required>
-        <el-input
-          v-model="form.apiKey"
-          type="password"
-          placeholder="请输入Kimi AI API密钥"
-          show-password
-        />
-        <div class="form-tip">
-          前往 <a href="https://platform.moonshot.cn/" target="_blank">Moonshot平台</a> 获取API密钥
-        </div>
-      </el-form-item>
+      
     </el-form>
 
     <template #footer>
@@ -124,7 +112,7 @@ const beforeUpload = (file) => {
       <el-button
         type="primary"
         :loading="loading"
-        :disabled="!form.file || !form.apiKey"
+        :disabled="!form.file"
         @click="handleUpload"
       >
         {{ loading ? '处理中...' : '开始导入' }}

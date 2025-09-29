@@ -16,12 +16,12 @@ public interface LiteratureService extends IService<Literature> {
     /**
      * 上传文献文件
      */
-    Literature uploadLiterature(MultipartFile file, String apiKey);
+    Literature uploadLiterature(MultipartFile file);
     
     /**
      * 批量导入文献
      */
-    void batchImportLiterature(MultipartFile[] files, String apiKey);
+    void batchImportLiterature(MultipartFile[] files);
     
     /**
      * 根据ID下载文献文件

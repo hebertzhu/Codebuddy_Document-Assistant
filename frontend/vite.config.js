@@ -15,6 +15,16 @@ export default defineConfig({
       resolvers: [ElementPlusResolver({ importStyle: false })],
     }),
   ],
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
   css: {
     preprocessorOptions: {
       scss: {

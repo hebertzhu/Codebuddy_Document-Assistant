@@ -37,15 +37,18 @@ public class KimiAIServiceImpl implements AIService {
     @Value("${ai.kimi.temperature}")
     private double temperature;
 
+    @Value("${ai.kimi.api-key:}")
+    private String kimiApiKey;
+
     @Override
-    public String generateReadingGuide(String content, String apiKey) {
+    public String generateReadingGuide(String content) {
         try {
             String systemPrompt = loadSystemPrompt();
             String requestBody = buildChatRequest(systemPrompt, content, false);
 
             Request request = new Request.Builder()
                     .url(baseUrl + "/chat/completions")
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Authorization", "Bearer " + kimiApiKey)
                     .header("Content-Type", "application/json")
                     .post(RequestBody.create(requestBody, MediaType.get("application/json")))
                     .build();
@@ -69,7 +72,7 @@ public class KimiAIServiceImpl implements AIService {
     }
 
     @Override
-    public String generateClassification(String content, String apiKey) {
+    public String generateClassification(String content) {
         try {
             String classificationPrompt = "请根据以下文献内容生成分类和描述信息。响应必须是纯净的JSON格式，包含以下字段：\n" +
                     "- category: 文献分类（字符串）\n" +
@@ -81,7 +84,7 @@ public class KimiAIServiceImpl implements AIService {
 
             Request request = new Request.Builder()
                     .url(baseUrl + "/chat/completions")
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Authorization", "Bearer " + kimiApiKey)
                     .header("Content-Type", "application/json")
                     .post(RequestBody.create(requestBody, MediaType.get("application/json")))
                     .build();
@@ -105,7 +108,7 @@ public class KimiAIServiceImpl implements AIService {
     }
 
     @Override
-    public void generateReadingGuideStream(String content, String apiKey, SSEHandler sseHandler) {
+    public void generateReadingGuideStream(String content, SSEHandler sseHandler) {
         SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
 
         try {
@@ -114,7 +117,7 @@ public class KimiAIServiceImpl implements AIService {
 
             Request request = new Request.Builder()
                     .url(baseUrl + "/chat/completions")
-                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Authorization", "Bearer " + kimiApiKey)
                     .header("Content-Type", "application/json")
                     .post(RequestBody.create(requestBody, MediaType.get("application/json")))
                     .build();
@@ -190,12 +193,5 @@ public class KimiAIServiceImpl implements AIService {
         return requestJson.toString();
     }
 
-    @org.springframework.context.annotation.Bean
-    public OkHttpClient okHttpClient() {
-        return new OkHttpClient.Builder()
-                .connectTimeout(timeout, TimeUnit.MILLISECONDS)
-                .readTimeout(timeout, TimeUnit.MILLISECONDS)
-                .writeTimeout(timeout, TimeUnit.MILLISECONDS)
-                .build();
-    }
+    // OkHttpClient Bean moved to AIConfig to avoid circular dependency
 }

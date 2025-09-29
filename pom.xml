@@ -65,6 +65,13 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
+        <!-- Ensure Spring 6 compatibility for MyBatis -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <!-- Tools -->
         <dependency>
             <groupId>cn.hutool</groupId>

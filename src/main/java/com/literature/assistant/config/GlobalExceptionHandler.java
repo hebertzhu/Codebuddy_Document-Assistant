@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,11 +47,8 @@ public class GlobalExceptionHandler {
         return Result.error(ResultCode.BAD_REQUEST.getCode(), "参数绑定失败: " + errors);
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public Result<?> handleConstraintViolationException(ConstraintViolationException e) {
-        log.warn("参数约束违反: {}", e.getMessage());
-        return Result.error(ResultCode.BAD_REQUEST.getCode(), e.getMessage());
-    }
+    // 暂时移除对 ConstraintViolationException 的专用处理，避免启动期类加载冲突。
+    // 该异常将由通用异常处理或参数校验异常处理覆盖。
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public Result<?> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {

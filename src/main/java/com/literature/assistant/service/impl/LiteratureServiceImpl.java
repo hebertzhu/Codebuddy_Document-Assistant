@@ -1,6 +1,5 @@
 package com.literature.assistant.service.impl;
 
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -9,6 +8,7 @@ import com.literature.assistant.entity.Literature;
 import com.literature.assistant.exception.BusinessException;
 import com.literature.assistant.mapper.LiteratureMapper;
 import com.literature.assistant.service.LiteratureService;
+import com.literature.assistant.service.AIService;
 import com.literature.assistant.util.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +37,8 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
     @Value("${file.upload.path}")
     private String uploadBasePath;
 
+    // AI 密钥由 AIService 的实现统一从配置读取
+
     private final ExecutorService virtualThreadExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     @Override
@@ -48,7 +50,7 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
 
     @Override
     @Transactional
-    public Literature uploadLiterature(MultipartFile file, String apiKey) {
+    public Literature uploadLiterature(MultipartFile file) {
         // 验证文件
         validateFile(file);
 
@@ -59,7 +61,7 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
         Literature literature = createLiteratureRecord(file, filePath);
 
         // 调用AI生成阅读指南
-        generateReadingGuide(literature, apiKey);
+        generateReadingGuide(literature);
 
         // 保存到数据库
         save(literature);
@@ -68,7 +70,7 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
     }
 
     @Override
-    public void batchImportLiterature(MultipartFile[] files, String apiKey) {
+    public void batchImportLiterature(MultipartFile[] files) {
         if (files == null || files.length == 0) {
             throw new BusinessException("请选择要导入的文件");
         }
@@ -80,7 +82,7 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
         for (MultipartFile file : files) {
             CompletableFuture.runAsync(() -> {
                 try {
-                    uploadLiterature(file, apiKey);
+                    uploadLiterature(file);
                     // SSE推送处理完成消息
                     // 这里需要实现SSE推送逻辑
                 } catch (Exception e) {
@@ -101,7 +103,7 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
         try {
             return Files.readAllBytes(Paths.get(literature.getFilePath()));
         } catch (IOException e) {
-            log.error("下载文献文件失败: {}", literature.getFilePath(), e);
+            log.error("下载文献文件失败: " + literature.getFilePath(), e);
             throw new BusinessException("文件下载失败");
         }
     }
@@ -154,29 +156,29 @@ public class LiteratureServiceImpl extends ServiceImpl<LiteratureMapper, Literat
         return literature;
     }
 
-    private void generateReadingGuide(Literature literature, String apiKey) {
+    private void generateReadingGuide(Literature literature) {
         try {
             // 解析文件内容
             String content = parseFileContent(literature.getFilePath());
             
             // 调用AI生成阅读指南
-            String readingGuide = aiService.generateReadingGuide(content, apiKey);
+            String readingGuide = aiService.generateReadingGuide(content);
             literature.setReadingGuide(readingGuide);
 
             // 使用虚拟线程异步生成分类和描述
             CompletableFuture.runAsync(() -> {
                 try {
-                    String aiResponse = aiService.generateClassification(content, apiKey);
+                    String aiResponse = aiService.generateClassification(content);
                     // 解析AI返回的JSON并更新文献信息
                     updateLiteratureWithAIResponse(literature, aiResponse);
                     updateById(literature);
                 } catch (Exception e) {
-                    log.error("AI分类生成失败: {}", literature.getTitle(), e);
+                    log.error("AI分类生成失败: " + literature.getTitle(), e);
                 }
             }, virtualThreadExecutor);
 
         } catch (Exception e) {
-            log.error("生成阅读指南失败: {}", literature.getTitle(), e);
+            log.error("生成阅读指南失败: " + literature.getTitle(), e);
             throw new BusinessException("AI服务调用失败");
         }
     }

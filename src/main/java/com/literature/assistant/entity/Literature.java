@@ -132,12 +132,20 @@ public class Literature {
         return filePath;
     }
 
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
     public void setReadingGuide(String readingGuide) {
         this.readingGuide = readingGuide;
     }
 
     public String getTitle() {
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
     
     /**

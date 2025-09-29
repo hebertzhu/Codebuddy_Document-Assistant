@@ -6,6 +6,7 @@ import com.literature.assistant.common.Result;
 import com.literature.assistant.entity.Literature;
 import com.literature.assistant.service.LiteratureService;
 import com.literature.assistant.service.SSEHandler;
+import com.literature.assistant.service.BatchImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import cn.hutool.json.JSONUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
@@ -32,22 +34,19 @@ import java.util.concurrent.Executors;
 public class LiteratureController {
 
     private final LiteratureService literatureService;
+    private final BatchImportService batchImportService;
     private final ExecutorService sseExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     @PostMapping("/upload")
     @Operation(summary = "上传文献文件", description = "上传单个文献文件并生成阅读指南")
     public Result<Literature> uploadLiterature(
-            @Parameter(description = "文献文件") @RequestParam("file") MultipartFile file,
-            @Parameter(description = "API密钥") @RequestParam("apiKey") String apiKey) {
+            @Parameter(description = "文献文件") @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return Result.error("文件不能为空");
         }
-        if (StrUtil.isBlank(apiKey)) {
-            return Result.error("API密钥不能为空");
-        }
 
         try {
-            Literature literature = literatureService.uploadLiterature(file, apiKey);
+            Literature literature = literatureService.uploadLiterature(file);
             return Result.success("文献上传成功", literature);
         } catch (Exception e) {
             log.error("文献上传失败", e);
@@ -55,83 +54,18 @@ public class LiteratureController {
         }
     }
 
-    @PostMapping("/batch-import")
-    @Operation(summary = "批量导入文献", description = "批量导入文献文件，通过SSE返回处理进度")
-    public SseEmitter batchImportLiterature(
-            @Parameter(description = "文献文件数组") @RequestParam("files") MultipartFile[] files,
-            @Parameter(description = "API密钥") @RequestParam("apiKey") String apiKey,
-            HttpServletResponse response) {
+    @PostMapping("/batch-import/start")
+    @Operation(summary = "创建批量导入任务", description = "创建批量导入任务，返回任务ID")
+    public java.util.Map<String, String> startBatchImport(
+            @Parameter(description = "文献文件数组") @RequestParam("files") MultipartFile[] files) {
+        String importId = batchImportService.startImport(files);
+        return java.util.Collections.singletonMap("importId", importId);
+    }
 
-        response.setContentType(MediaType.TEXT_EVENT_STREAM_VALUE);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-
-        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
-
-        sseExecutor.execute(() -> {
-            try {
-                if (files == null || files.length == 0) {
-                    emitter.send(SseEmitter.event().name("error").data("请选择要导入的文件"));
-                    emitter.complete();
-                    return;
-                }
-
-                if (files.length > 16) {
-                    emitter.send(SseEmitter.event().name("error").data("一次最多导入16个文件"));
-                    emitter.complete();
-                    return;
-                }
-
-                // 发送开始事件
-                emitter.send(SseEmitter.event().name("start").data(files.length));
-
-                for (int i = 0; i < files.length; i++) {
-                    MultipartFile file = files[i];
-                    try {
-                        emitter.send(SseEmitter.event()
-                                .name("progress")
-                                .data("正在处理: " + file.getOriginalFilename()));
-
-                        Literature literature = literatureService.uploadLiterature(file, apiKey);
-
-                        emitter.send(SseEmitter.event()
-                                .name("file_complete")
-                                .data(JSONUtil.createObj()
-                                        .set("fileName", file.getOriginalFilename())
-                                        .set("success", true)
-                                        .set("literatureId", literature.getId())));
-
-                    } catch (Exception e) {
-                        log.error("文件处理失败: {}", file.getOriginalFilename(), e);
-                        emitter.send(SseEmitter.event()
-                                .name("file_error")
-                                .data(JSONUtil.createObj()
-                                        .set("fileName", file.getOriginalFilename())
-                                        .set("error", e.getMessage())));
-                    }
-
-                    // 更新进度
-                    emitter.send(SseEmitter.event()
-                            .name("progress_update")
-                            .data(JSONUtil.createObj()
-                                    .set("current", i + 1)
-                                    .set("total", files.length)));
-                }
-
-                emitter.send(SseEmitter.event().name("complete").data("批量导入完成"));
-                emitter.complete();
-
-            } catch (Exception e) {
-                log.error("批量导入异常", e);
-                try {
-                    emitter.send(SseEmitter.event().name("error").data("批量导入失败: " + e.getMessage()));
-                } catch (IOException ex) {
-                    log.error("SSE发送错误失败", ex);
-                }
-                emitter.completeWithError(e);
-            }
-        });
-
-        return emitter;
+    @GetMapping(value = "/batch-import/progress/{id}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "批量导入进度SSE", description = "根据任务ID连接SSE获取批量导入进度")
+    public SseEmitter batchImportProgress(@PathVariable("id") String importId) {
+        return batchImportService.connectProgress(importId);
     }
 
     @GetMapping("/list")
